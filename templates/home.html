@@ -1,15 +1,19 @@
 {% extends "layout.html" %}
 {% block body %}
 
- <ul>
+{% if current_user.is_anonymous %}
+  <p>Please sign in by clicking the button below:</p>
+  <a href="{{ url_for('login') }}">Login</a>
+{% else %}
+  <h2>Hi, {{ current_user.email }}</h2>
+  <p><a href="{{ url_for('logout') }}">Logout</a></p>
+
+  <br>
   {% for survey in surveys %}
-    <a href="{{ url_for('survey_question', survey_id=survey.id) }}"><li>{{ survey.survey_title }}</li></a>
-  {% endfor %}
+  <ul>
+    <li><a href="{{ url_for('survey_question', survey_id=survey.id) }}">{{ survey.survey_title }}</a></li>
   </ul>
-  <!-- <form action="{{ url_for('home') }}" method="POST">
+  {% endfor %}
 
-
-    <input type="submit" value="Submit">
-
-  </form> -->
+{% endif %}
 {% endblock %}

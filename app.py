@@ -1,17 +1,56 @@
 import json
 
-from flask import Flask, render_template, request, url_for, redirect
+from flask import Flask, render_template, request, url_for, redirect, flash
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.orm import validates
+
+from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.urls import url_parse
 
 from flask_wtf import FlaskForm
-from wtforms import HiddenField, RadioField
-from wtforms.widgets import HiddenInput
+from wtforms import validators
+from wtforms import HiddenField, RadioField, PasswordField, BooleanField,\
+    SubmitField
+from wtforms.fields.html5 import EmailField
+
+from flask_login import LoginManager
+from flask_login import UserMixin
+from flask_login import current_user, login_user, logout_user, login_required
+
+
+"""
+THINGS TO DO:
+    (X) Flask-Login integration
+    ( ) Add Answers model
+    ( ) Add HTML/CSS
+    ( ) Reorganize code
+    ( ) CRUD admin portal creation of new surveys
+        ( ) jQuery UI - Sortable
+        ( ) Will probably need AJAX to send over li value items.  If the user
+            decides to change the value order, python can just order the
+            list by ascending value order and create id's for them.
+    ( ) Bokeh to display answer statistics by user
+"""
 
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///test.db'
 app.config['SECRET_KEY'] = 'seekrets'
+
 db = SQLAlchemy(app)
+login_manager = LoginManager()
+login_manager.login_view = 'login'
+login_manager.init_app(app)
+
+
+class LoginForm(FlaskForm):
+    email = EmailField('Email Address',
+                       [validators.DataRequired(),
+                        validators.Email()])
+    password = PasswordField('Password',
+                             [validators.DataRequired()])
+    remember_me = BooleanField('Remember Me')
+    submit = SubmitField('Sign In')
 
 
 class AnswerForm(FlaskForm):
@@ -19,6 +58,18 @@ class AnswerForm(FlaskForm):
     survey_id = HiddenField('survey_id')
     question_id = HiddenField('question_id')
     answers = RadioField('Answers', choices=[])
+
+
+class User(UserMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.Integer, unique=True)
+    password = db.Column(db.String())
+
+    def set_password(self, password):
+        self.password = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.password, password)
 
 
 class Survey(db.Model):
@@ -49,6 +100,12 @@ class QuestionChoices(db.Model):
         return '<QuestionChoices %r>' % self.choice
 
 
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
+
+@login_required
 @app.route('/')
 def home():
     surveys = Survey.query.all()
@@ -56,6 +113,31 @@ def home():
     return render_template('home.html', surveys=surveys)
 
 
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if current_user.is_authenticated:
+        return redirect(url_for('home'))
+    form = LoginForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(email=form.email.data).first()
+        if user is None or not user.check_password(form.password.data):
+            flash('Invalid username or password')
+            return redirect(url_for('login'))
+        login_user(user, remember=form.remember_me.data)
+        next_page = request.args.get('next')
+        if not next_page or url_parse(next_page).netloc != '':
+            return redirect(url_for('home'))
+        return redirect(next_page)
+    return render_template('login.html', title='Sign In', form=form)
+
+
+@app.route('/logout')
+def logout():
+    logout_user()
+    return redirect(url_for('home'))
+
+
+@login_required
 @app.route('/survey/<int:survey_id>/questions', methods=['GET', 'POST'])
 def survey_question(survey_id):
     survey = Survey.query.filter_by(id=survey_id).first()

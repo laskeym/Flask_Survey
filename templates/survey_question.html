@@ -16,6 +16,8 @@
 
     {% if prev_url %}
       <a href="{{ prev_url }}">Back</a>
+    {% else %}
+      <a href="{{ url_for('home') }}">Back</a>
     {% endif %}
     {% if next_url %}
        <input type="submit" value="Submit">
