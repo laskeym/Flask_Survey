@@ -1,0 +1,27 @@
+{% extends "layout.html" %}
+{% block body %}
+
+
+  <form action="{{ url_for('submit') }}" method="POST">
+    {{ form.hidden_tag() }}
+
+    {% if errors %}
+      {% for error in errors['answers'] %}
+        <div>{{ error }}</div>
+      {% endfor %}
+    {% endif %}
+
+
+    {{ form.answers() }}
+
+    {% if prev_url %}
+      <a href="{{ prev_url }}">Back</a>
+    {% endif %}
+    {% if next_url %}
+       <input type="submit" value="Submit">
+    {% else %}
+      <a href="#">Finish</a>
+
+    {% endif %}
+  </form>
+{% endblock %}
