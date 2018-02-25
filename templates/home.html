@@ -3,15 +3,15 @@
 
 {% if current_user.is_anonymous %}
   <p>Please sign in by clicking the button below:</p>
-  <a href="{{ url_for('login') }}">Login</a>
+  <a href="{{ url_for('login') }}" class="btn btn-default">Login</a>
 {% else %}
   <h2>Hi, {{ current_user.email }}</h2>
-  <p><a href="{{ url_for('logout') }}">Logout</a></p>
+  <p><a href="{{ url_for('logout') }}" class="btn btn-default">Logout</a></p>
 
   <br>
   {% for survey in surveys %}
-  <ul>
-    <li><a href="{{ url_for('survey_question', survey_id=survey.id) }}">{{ survey.survey_title }}</a></li>
+  <ul class="list-group">
+    <a href="{{ url_for('survey_question', survey_id=survey.id) }}"><li class="list-group-item">{{ survey.survey_title }}</li></a>
   </ul>
   {% endfor %}
 

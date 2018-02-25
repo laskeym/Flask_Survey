@@ -1,0 +1,23 @@
+col-md-12 {
+  padding: 30px 0;
+}
+
+
+.answers_form {
+  margin 0;
+  padding: 20px 0px 20px 25px;
+  border: #17a2b8 1px solid;
+  border-radius: 20px;
+}
+
+.radio {
+  font-size: 125%;
+}
+
+.radio_btn {
+  padding: 0 10px;
+}
+
+.nav_buttons {
+  padding-top: 15px;
+}

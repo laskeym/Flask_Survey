@@ -1,29 +1,47 @@
 {% extends "layout.html" %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='survey_question.css') }}">
+{% endblock %}
+
 {% block body %}
 
+  <div class="col-md-12">
+    {% for q in question %}
+      <h2>{{ q.question }}</h2>
+    {% endfor %}
 
-  <form action="{{ url_for('submit') }}" method="POST">
-    {{ form.hidden_tag() }}
+    <form action="{{ url_for('submit') }}" method="POST" class="answers_form">
+      {{ form.hidden_tag() }}
 
-    {% if errors %}
-      {% for error in errors['answers'] %}
-        <div>{{ error }}</div>
+      {% if errors %}
+        {% for error in errors['answers'] %}
+          <div><p style="color: red;">{{ error }}</p></div>
+        {% endfor %}
+      {% endif %}
+
+      {% for x in form.answers %}
+      <div class="radio">
+        {{ x(class_='radio') }}
+        <label class="radio_btn">{{ x.data }}</label>
+      </div>
       {% endfor %}
-    {% endif %}
 
+      <div class="nav_buttons">
+        {% if prev_url %}
+          <a href="{{ prev_url }}" class="btn btn-info pull-left">Back</a>
+        {% else %}
+          <a href="{{ url_for('home') }}" class="btn btn-default pull-left">Back</a>
+        {% endif %}
 
-    {{ form.answers() }}
+        {% if next_url %}
+          <input type="submit" class="btn btn-info pull-right" value="Next">
+        {% else %}
+          <a href="#" class="btn btn-success">Finish</a>
+        {% endif %}
+      </div>
+    </form>
 
-    {% if prev_url %}
-      <a href="{{ prev_url }}">Back</a>
-    {% else %}
-      <a href="{{ url_for('home') }}">Back</a>
-    {% endif %}
-    {% if next_url %}
-       <input type="submit" value="Submit">
-    {% else %}
-      <a href="#">Finish</a>
+    </div>
 
-    {% endif %}
-  </form>
+  </div>
 {% endblock %}

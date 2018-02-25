@@ -2,7 +2,6 @@ import json
 
 from flask import Flask, render_template, request, url_for, redirect, flash
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.orm import validates
 
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.urls import url_parse
@@ -13,8 +12,7 @@ from wtforms import HiddenField, RadioField, PasswordField, BooleanField,\
     SubmitField
 from wtforms.fields.html5 import EmailField
 
-from flask_login import LoginManager
-from flask_login import UserMixin
+from flask_login import LoginManager, UserMixin
 from flask_login import current_user, login_user, logout_user, login_required
 
 
@@ -177,6 +175,7 @@ def survey_question(survey_id):
     return render_template('survey_question.html',
                            form=form,
                            survey_id=survey_id,
+                           question=questions.items,
                            choices=choices,
                            errors=errors,
                            page=page,
@@ -190,6 +189,7 @@ def submit():
         survey_id = int(request.form['survey_id'])
         page = int(request.args.get('page', 1))
         form = AnswerForm(request.form)
+
         choices = QuestionChoices.query\
             .join(Question, QuestionChoices.question_id == Question.id)\
             .filter(QuestionChoices.question_id == form.question_id.data).all()
