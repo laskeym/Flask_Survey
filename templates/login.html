@@ -3,18 +3,27 @@
 
 <form action="" method="POST">
   {{ form.hidden_tag() }}
-  <p>
-    {{ form.email.label }}:
-    {{ form.email(size=32) }}
-  </p>
+  <div class="form-group">
+    <label for="email" class="col-md-2 control-label">{{ form.email.label }}</label>
+    <div class="input-group">
+      <span class="input-group-addon"><i class="fa fa-user fa"></i></span>
+      {{ form.email(class_='form-control', placeholder='Enter your email', size=32)}}
+    </div>
+  </div>
 
-  <p>
-    {{ form.password.label }}:
-    {{ form.password(size=32) }}
-  </p>
+  <div class="form-group">
+    <label for="email" class="col-md-2 control-label">{{ form.password.label }}</label>
+    <div class="input-group">
+      <span class="input-group-addon"><i class="fa fa-user fa"></i></span>
+      {{ form.password(class_='form-control', placeholder='Enter your password', size=32) }}
+    </div>
+  </div>
 
-  <p>{{ form.remember_me() }} {{ form.remember_me.label }}</p>
-  <p>{{ form.submit() }}</p>
+  <div class="checkbox">
+    <label>{{ form.remember_me() }} {{ form.remember_me.label }}</label>
+  </div>
+
+  {{ form.submit(class_='btn btn-default') }}
 </form>
 
 {% endblock %}

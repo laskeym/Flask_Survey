@@ -2,6 +2,7 @@ import json
 
 from flask import Flask, render_template, request, url_for, redirect, flash
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import and_
 
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.urls import url_parse
@@ -19,8 +20,9 @@ from flask_login import current_user, login_user, logout_user, login_required
 """
 THINGS TO DO:
     (X) Flask-Login integration
-    ( ) Add Answers model
-    ( ) Add HTML/CSS
+    (X) Add Answers model
+    (\) Add HTML/CSS
+    ( ) Move to PostgreSQL
     ( ) Reorganize code
     ( ) CRUD admin portal creation of new surveys
         ( ) jQuery UI - Sortable
@@ -52,7 +54,7 @@ class LoginForm(FlaskForm):
 
 
 class AnswerForm(FlaskForm):
-    page = HiddenField('page', default=1)
+    page = HiddenField('page')
     survey_id = HiddenField('survey_id')
     question_id = HiddenField('question_id')
     answers = RadioField('Answers', choices=[])
@@ -78,6 +80,11 @@ class Survey(db.Model):
         return '<Survey %r>' % self.survey_title
 
 
+class SurveyComplete(db.Model):
+    user_id = db.Column(db.Integer, primary_key=True)
+    survey_id = db.Column(db.Integer, primary_key=True)
+
+
 class Question(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     survey_id = db.Column(db.Integer, db.ForeignKey('survey.id'),
@@ -98,6 +105,19 @@ class QuestionChoices(db.Model):
         return '<QuestionChoices %r>' % self.choice
 
 
+class Answers(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'),
+                        nullable=False)
+    survey_id = db.Column(db.Integer, db.ForeignKey('survey.id'),
+                          nullable=False)
+    question_id = db.Column(db.Integer, db.ForeignKey('question.id'))
+    answer = db.Column(db.String(), nullable=False)
+
+    def __repr__(self):
+        return '<Answers %r>' % self.answer
+
+
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
@@ -106,7 +126,11 @@ def load_user(user_id):
 @login_required
 @app.route('/')
 def home():
-    surveys = Survey.query.all()
+    surveys = Survey.query\
+        .outerjoin(SurveyComplete,
+                   and_(Survey.id == SurveyComplete.survey_id,
+                        SurveyComplete.user_id == current_user.get_id()))\
+        .filter(SurveyComplete.user_id == None).all()
 
     return render_template('home.html', surveys=surveys)
 
@@ -136,13 +160,42 @@ def logout():
 
 
 @login_required
+@app.route('/survey/<int:survey_id>')
+def survey_home(survey_id):
+    survey = Survey.query.get(survey_id)
+
+    is_complete = SurveyComplete.query\
+        .filter_by(user_id=current_user.get_id(),
+                   survey_id=survey.id).first()
+
+    if is_complete:
+        url = url_for('home')
+        flash('You have already completed this survey!')
+
+        return redirect(url)
+
+    return render_template('survey.html',
+                           survey=survey)
+
+
+@login_required
 @app.route('/survey/<int:survey_id>/questions', methods=['GET', 'POST'])
 def survey_question(survey_id):
-    survey = Survey.query.filter_by(id=survey_id).first()
+    survey = Survey.query.get(survey_id)
     if survey is None:
         return '404 Page Not Found!'
 
-    survey_id = survey_id
+    is_complete = SurveyComplete.query\
+        .filter_by(user_id=current_user.get_id(),
+                   survey_id=survey.id).first()
+
+    if is_complete:
+        url = url_for('home')
+        flash('You have already completed this survey!')
+
+        return redirect(url)
+
+    survey_id = survey.id
     page = request.args.get('page', 1, type=int)
     questions = Question.query.filter_by(survey_id=survey_id)\
         .order_by(Question.id)\
@@ -160,6 +213,7 @@ def survey_question(survey_id):
     if errors:
         errors = errors.replace("'", "\"")
         errors = json.loads(errors)
+    form.page.data = page
     form.survey_id.data = survey_id
     form.question_id.data = question_id
     form.answers.choices = [(choice.choice, choice.choice)
@@ -174,7 +228,7 @@ def survey_question(survey_id):
 
     return render_template('survey_question.html',
                            form=form,
-                           survey_id=survey_id,
+                           survey=survey,
                            question=questions.items,
                            choices=choices,
                            errors=errors,
@@ -183,12 +237,22 @@ def survey_question(survey_id):
                            prev_url=prev_url)
 
 
+@login_required
+@app.route('/success')
+def success():
+    return render_template('success.html')
+
+
+@login_required
 @app.route('/submit', methods=["POST"])
 def submit():
     if request.method == "POST":
         survey_id = int(request.form['survey_id'])
-        page = int(request.args.get('page', 1))
+        last_question = Question.query\
+            .filter_by(survey_id=survey_id).count()
+
         form = AnswerForm(request.form)
+        page = int(form.page.data)
 
         choices = QuestionChoices.query\
             .join(Question, QuestionChoices.question_id == Question.id)\
@@ -197,6 +261,31 @@ def submit():
         form.answers.choices = [(choice.choice, choice.choice)
                                 for choice in choices]
         if form.validate():
+            answer = Answers(user_id=current_user.get_id(),
+                             survey_id=survey_id,
+                             question_id=form.question_id.data,
+                             answer=form.answers.data)
+
+            answer_exists = Answers.query\
+                .filter_by(user_id=current_user.get_id(),
+                           survey_id=form.survey_id.data,
+                           question_id=form.question_id.data)\
+                .first()
+            if answer_exists:
+                answer_exists.answer = answer.answer
+            else:
+                db.session.add(answer)
+
+            db.session.commit()
+            if page == last_question:
+                is_complete = SurveyComplete(user_id=current_user.get_id(),
+                                             survey_id=survey_id)
+                db.session.add(is_complete)
+                db.session.commit()
+
+                url = url_for('success')
+                return redirect(url)
+
             url = url_for('survey_question', survey_id=survey_id, page=page+1)
 
             return redirect(url)

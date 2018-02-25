@@ -1,0 +1,13 @@
+{% extends "layout.html" %}
+
+{% block body %}
+
+  <div class="col-md-12">
+    <h2>{{ survey.survey_title }}</h2>
+
+    <p>Here is where a small description of the survey can go.</p>
+
+    <a href="{{ url_for('survey_question', survey_id=survey.id) }}" class="btn btn-info">Take Survey!</a>
+  </div>
+
+{% endblock %}

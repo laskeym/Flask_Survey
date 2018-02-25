@@ -1,7 +1,16 @@
-col-md-12 {
+.col-md-12 {
   padding: 30px 0;
 }
 
+.col-md-12 h3 {
+  padding-bottom: 15px;
+  font-size: 24px;
+}
+
+.btn-info {
+  background-color: #17a2b8;
+  color: white;
+}
 
 .answers_form {
   margin 0;

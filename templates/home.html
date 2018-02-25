@@ -9,11 +9,23 @@
   <p><a href="{{ url_for('logout') }}" class="btn btn-default">Logout</a></p>
 
   <br>
-  {% for survey in surveys %}
-  <ul class="list-group">
-    <a href="{{ url_for('survey_question', survey_id=survey.id) }}"><li class="list-group-item">{{ survey.survey_title }}</li></a>
-  </ul>
-  {% endfor %}
+  {% with messages = get_flashed_messages() %}
+    {% if messages %}
+      {% for message in messages %}
+        <div style="color: red;">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  {% if surveys %}
+    {% for survey in surveys %}
+    <ul class="list-group">
+      <a href="{{ url_for('survey_home', survey_id=survey.id) }}"><li class="list-group-item">{{ survey.survey_title }}</li></a>
+    </ul>
+    {% endfor %}
+  {% else %}
+    <p>No surveys currently available!</p>
+  {% endif %}
 
 {% endif %}
 {% endblock %}
