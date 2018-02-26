@@ -3,8 +3,12 @@
 
 <form action="" method="POST">
   {{ form.hidden_tag() }}
+
   <div class="form-group">
     <label for="email" class="col-md-2 control-label">{{ form.email.label }}</label>
+    {% if form.errors.get('email', None) %}
+      <p style="color:red;">Email required</p>
+    {% endif %}
     <div class="input-group">
       <span class="input-group-addon"><i class="fa fa-user fa"></i></span>
       {{ form.email(class_='form-control', placeholder='Enter your email', size=32)}}
@@ -13,6 +17,9 @@
 
   <div class="form-group">
     <label for="email" class="col-md-2 control-label">{{ form.password.label }}</label>
+    {% if form.errors.get('password', None) %}
+      <span style="color:red;">Password required</span>
+    {% endif %}
     <div class="input-group">
       <span class="input-group-addon"><i class="fa fa-user fa"></i></span>
       {{ form.password(class_='form-control', placeholder='Enter your password', size=32) }}
@@ -21,6 +28,14 @@
 
   <div class="checkbox">
     <label>{{ form.remember_me() }} {{ form.remember_me.label }}</label>
+  </div>
+
+  <div class="captcha">
+    {% if form.errors.get('captcha', None) %}
+      <span style="color:red;">Please fill out the captcha</span>
+    {% endif %}
+    {{ form.captcha }}
+
   </div>
 
   {{ form.submit(class_='btn btn-default') }}

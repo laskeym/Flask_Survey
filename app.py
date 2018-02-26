@@ -7,7 +7,7 @@ from sqlalchemy import and_
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.urls import url_parse
 
-from flask_wtf import FlaskForm
+from flask_wtf import FlaskForm, RecaptchaField
 from wtforms import validators
 from wtforms import HiddenField, RadioField, PasswordField, BooleanField,\
     SubmitField
@@ -36,6 +36,8 @@ THINGS TO DO:
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///test.db'
 app.config['SECRET_KEY'] = 'seekrets'
+app.config['RECAPTCHA_PUBLIC_KEY'] = '6LeYIbsSAAAAACRPIllxA7wvXjIE411PfdB2gt2J'
+app.config['RECAPTCHA_PRIVATE_KEY'] = '6LeYIbsSAAAAAJezaIq3Ft_hSTo0YtyeFG-JgRtu'
 
 db = SQLAlchemy(app)
 login_manager = LoginManager()
@@ -50,6 +52,7 @@ class LoginForm(FlaskForm):
     password = PasswordField('Password',
                              [validators.DataRequired()])
     remember_me = BooleanField('Remember Me')
+    captcha = RecaptchaField()
     submit = SubmitField('Sign In')
 
 

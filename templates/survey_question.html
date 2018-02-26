@@ -21,8 +21,7 @@
 
       {% for x in form.answers %}
       <div class="radio">
-        {{ x(class_='radio') }}
-        <label class="radio_btn">{{ x.data }}</label>
+        <label class="radio_btn">{{ x(class_='radio') }}{{ x.data }}</label>
       </div>
       {% endfor %}
     </div>
